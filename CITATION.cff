@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use Argus, please cite it as below."
+title: "Argus: verifying bibliographies against Crossref to detect distorted citations"
+authors:
+  - family-names: Bustamante
+    given-names: "Michael E."
+    affiliation: "Odinzen LLC, Houston, TX, United States"
+    orcid: "https://orcid.org/0009-0009-9001-8151"
+version: 0.1.0
+license: GPL-3.0-or-later
+repository-code: "https://github.com/odinzen/argus-public"
+keywords:
+  - citation verification
+  - research integrity
+  - Crossref
+  - bibliography

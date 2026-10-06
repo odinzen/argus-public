@@ -1,0 +1,57 @@
+# Reusable pre-commit hooks. A manuscript or repro repo pulls these in with:
+#
+#   repos:
+#     - repo: https://github.com/odinzen/argus-public
+#       rev: <commit-sha>
+#       hooks:
+#         - id: argus-repro          # only in a reproducibility repo
+#         - id: argus-kristina
+#           files: ^manuscript\.md$  # point each manuscript hook at your one draft
+#
+# The repo-level hook (repro) scans the whole tree on every commit. The
+# manuscript hooks take a single file, so set `files:` to your draft in the consuming
+# repo's .pre-commit-config.yaml.
+
+- id: argus-repro
+  name: argus repro (README manifest vs files)
+  description: Check a reproducibility repo's README against its files.
+  entry: argus repro .
+  language: python
+  pass_filenames: false
+  always_run: true
+
+- id: argus-order
+  name: argus order (citation / figure / section numbering)
+  entry: argus order
+  language: python
+  files: \.(md|docx)$
+
+- id: argus-kristina
+  name: argus kristina (editorial checklist)
+  entry: argus kristina
+  language: python
+  files: \.(md|docx)$
+
+- id: argus-typography
+  name: argus typography (super/subscripts, degree glyph, equations)
+  entry: argus typography
+  language: python
+  files: \.(md|docx)$
+
+- id: argus-units
+  name: argus units (temperature / composition consistency)
+  entry: argus units
+  language: python
+  files: \.(md|docx)$
+
+- id: argus-consistency
+  name: argus consistency (abstract values appear in the body)
+  entry: argus consistency
+  language: python
+  files: \.(md|docx)$
+
+- id: argus-statements
+  name: argus statements (COI / AI-use / data availability)
+  entry: argus statements
+  language: python
+  files: \.(md|docx)$
