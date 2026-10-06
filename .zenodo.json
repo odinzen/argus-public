@@ -3,7 +3,7 @@
   "description": "Argus checks a bibliography against the authoritative Crossref record for each work and flags citations whose metadata does not match, including the co-author conflation (a real paper cited with the byline of another) that DOI resolution and first-author checks miss. It reads CSL-JSON or BibTeX, depends only on the Python standard library and the public Crossref API, and contains no language model in its verification path.",
   "upload_type": "software",
   "access_right": "open",
-  "license": "GPL-3.0-or-later",
+  "license": "AGPL-3.0-or-later",
   "creators": [
     { "name": "Bustamante, Michael E.", "affiliation": "Odinzen LLC, Houston, TX, United States", "orcid": "0009-0009-9001-8151" }
   ],

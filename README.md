@@ -343,7 +343,9 @@ documents what Argus catches and what it does not.
 
 ## License
 
-Copyright (c) 2026 Odinzen LLC. Argus is free software, released under the GNU General
-Public License, version 3 or (at your option) any later version. See [LICENSE](LICENSE)
+Copyright (c) 2026 Odinzen LLC. Argus is free software, released under the GNU Affero
+General Public License, version 3 or (at your option) any later version (from 0.2.0;
+0.1.0 was GPL-3.0-or-later). Anyone who runs a modified Argus for others over a network
+must offer those users its source. See [LICENSE](LICENSE)
 and [NOTICE](NOTICE). If you use Argus in published work, please cite it: doi 10.5281/zenodo.23198753 (all
 versions; version 0.1.0 is 10.5281/zenodo.23198754). See CITATION.cff.
