@@ -7,8 +7,14 @@ authors:
     affiliation: "Odinzen LLC, Houston, TX, United States"
     orcid: "https://orcid.org/0009-0009-9001-8151"
 version: 0.1.0
+doi: 10.5281/zenodo.23198753
+date-released: 2026-10-06
 license: GPL-3.0-or-later
 repository-code: "https://github.com/odinzen/argus-public"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23198754
+    description: "Version 0.1.0"
 keywords:
   - citation verification
   - research integrity

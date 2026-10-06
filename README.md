@@ -1,5 +1,7 @@
 # Argus
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23198753.svg)](https://doi.org/10.5281/zenodo.23198753)
+
 Argus checks a bibliography against Crossref and flags any citation whose metadata
 does not match the record it points to. It is built for the failure most checks miss:
 a citation that keeps the right first author, title, and year but carries the wrong
@@ -343,4 +345,5 @@ documents what Argus catches and what it does not.
 
 Copyright (c) 2026 Odinzen LLC. Argus is free software, released under the GNU General
 Public License, version 3 or (at your option) any later version. See [LICENSE](LICENSE)
-and [NOTICE](NOTICE). If you use Argus in published work, please cite it (CITATION.cff).
+and [NOTICE](NOTICE). If you use Argus in published work, please cite it: doi 10.5281/zenodo.23198753 (all
+versions; version 0.1.0 is 10.5281/zenodo.23198754). See CITATION.cff.
