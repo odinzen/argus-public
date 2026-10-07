@@ -71,6 +71,9 @@ _SPELLING: list[tuple[str, str]] = [
 
 # An em-dash used as a separator: a real em/en dash, or the pandoc "--" between spaces.
 _EMDASH = re.compile(r"—|–| -- ")
+# A collapsed numeric citation range ("[13–15]", "[2, 5–7]"). Elsevier numeric styles print
+# consecutive references this way, so its en dash is not a clause separator.
+_CITE_RANGE = re.compile(r"\[\d{1,3}(?:\s*[,–-]\s*\d{1,3})*\]")
 # "et al." expanded, which the checklist forbids.
 _ETAL_EXPANDED = re.compile(r"\band co-?workers\b|\band colleagues\b", re.IGNORECASE)
 # A companion study cited as unpublished.
@@ -116,7 +119,10 @@ def _spelling_issues(lines: list[str], variant: str) -> list[KIssue]:
 def _rule_issues(lines: list[str]) -> list[KIssue]:
     out: list[KIssue] = []
     for i, line in enumerate(lines, 1):
+        ranges = [c.span() for c in _CITE_RANGE.finditer(line)]
         for m in _EMDASH.finditer(line):
+            if m.group() == "–" and any(a < m.start() < b for a, b in ranges):
+                continue
             out.append(
                 KIssue(
                     i,

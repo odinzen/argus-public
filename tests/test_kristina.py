@@ -1,4 +1,6 @@
-from argus import kristina
+import zipfile
+
+from argus import cli, kristina
 
 
 def _kinds(report):
@@ -14,6 +16,38 @@ def test_em_dash_is_an_error():
 def test_pandoc_double_hyphen_dash_flagged():
     r = kristina.check_kristina("The value was high -- higher than expected.\n")
     assert "em-dash" in _kinds(r)
+
+
+def test_citation_range_en_dash_not_flagged():
+    # Elsevier numeric styles collapse consecutive citations with an en dash.
+    r = kristina.check_kristina("Competing phases [13–15], at a cost [2, 5–7].\n")
+    assert "em-dash" not in _kinds(r)
+
+
+def test_prose_dash_beside_citation_range_still_flagged():
+    r = kristina.check_kristina("Phases [13–15] – the stable ones – held.\n")
+    assert sum(x.kind == "em-dash" for x in r.issues) == 2
+
+
+def test_em_dash_inside_brackets_still_flagged():
+    r = kristina.check_kristina("Competing phases [13—15] held.\n")
+    assert "em-dash" in _kinds(r)
+
+
+def test_superscript_citation_range_in_docx_not_flagged(tmp_path, capsys):
+    run = '<w:r><w:t xml:space="preserve">{}</w:t></w:r>'
+    sup = '<w:r><w:rPr><w:vertAlign w:val="superscript"/></w:rPr><w:t>13–15</w:t></w:r>'
+    body = "<w:p>" + run.format("Competing phases") + sup + run.format(", at a cost.") + "</w:p>"
+    doc = (
+        '<?xml version="1.0"?><w:document '
+        'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        f"<w:body>{body}</w:body></w:document>"
+    )
+    path = tmp_path / "paper.docx"
+    with zipfile.ZipFile(path, "w") as zf:
+        zf.writestr("word/document.xml", doc)
+    assert cli.main(["kristina", str(path)]) == 0
+    assert "em-dash" not in capsys.readouterr().out
 
 
 def test_et_al_expansion_is_an_error():

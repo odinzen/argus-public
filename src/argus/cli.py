@@ -391,7 +391,8 @@ def kristina_cmd(args: argparse.Namespace) -> int:
     variant = ""
     if args.journal and args.journal in policy.JOURNALS:
         variant = policy.JOURNALS[args.journal].spelling
-    text = _read_text(args.manuscript)
+    # Superscript citations come through as "[n]" so a collapsed range reads like a bracketed one.
+    text = _read_for_ordering(args.manuscript)
     report = kristina.check_kristina(text, journal_variant=variant or None)
     if not report.issues:
         print(f"[ok] no Kristina-checklist issues found (spelling target: {report.variant}).")
