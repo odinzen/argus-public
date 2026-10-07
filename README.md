@@ -186,14 +186,14 @@ rendering, the corresponding author's middle initial, the city) is reported as a
 Without `--journal`, the always-expected set (conflict of interest and data availability)
 is used.
 
-## Kristina checklist
+## Editorial checklist
 
-`argus kristina` is the machine-checkable slice of the standing editorial checklist. Most
+`argus editorial` is the machine-checkable slice of the standing editorial checklist. Most
 of that checklist is judgment and stays a human pass; the rest are literal string rules
 that drift back into every draft.
 
 ```
-argus kristina manuscript.docx --journal JECS
+argus editorial manuscript.docx --journal JECS
 ```
 
 - **Firm rules** (fail) — an em/en dash used as a separator, "and co-workers" for "et al.",
@@ -305,7 +305,7 @@ repos:
     rev: <commit-sha>
     hooks:
       - id: argus-repro                # only in a reproducibility repo
-      - id: argus-kristina
+      - id: argus-editorial
         files: ^manuscript\.md$        # point each manuscript hook at your draft
       - id: argus-units
         files: ^manuscript\.md$

@@ -7,7 +7,7 @@
   argus renumber draft.md       report citation order; --apply to rewrite in place
   argus format manuscript.docx  flag body paragraphs that drift from the body formatting
   argus statements paper.docx   check COI, AI-use, data-availability and other statements
-  argus kristina paper.docx     Kristina checklist: banned phrasing, em-dashes, spelling
+  argus editorial paper.docx    Editorial checklist: banned phrasing, em-dashes, spelling
   argus units paper.docx        temperature and composition unit consistency
   argus consistency paper.docx  check distinctive abstract values appear in the body
   argus repro public-repo/      check a repro repo's README manifest against its files
@@ -31,10 +31,10 @@ from . import (
     consistency,
     crosscheck,
     docx,
+    editorial,
     fields,
     floats,
     formatting,
-    kristina,
     ordering,
     policy,
     renumbering,
@@ -56,7 +56,7 @@ _SUBCOMMANDS = {
     "renumber",
     "format",
     "statements",
-    "kristina",
+    "editorial",
     "units",
     "consistency",
     "repro",
@@ -387,15 +387,15 @@ def statements_cmd(args: argparse.Namespace) -> int:
     return 0 if report.status == "ok" else 1
 
 
-def kristina_cmd(args: argparse.Namespace) -> int:
+def editorial_cmd(args: argparse.Namespace) -> int:
     variant = ""
     if args.journal and args.journal in policy.JOURNALS:
         variant = policy.JOURNALS[args.journal].spelling
     # Superscript citations come through as "[n]" so a collapsed range reads like a bracketed one.
     text = _read_for_ordering(args.manuscript)
-    report = kristina.check_kristina(text, journal_variant=variant or None)
+    report = editorial.check_editorial(text, journal_variant=variant or None)
     if not report.issues:
-        print(f"[ok] no Kristina-checklist issues found (spelling target: {report.variant}).")
+        print(f"[ok] no editorial-checklist issues found (spelling target: {report.variant}).")
         return 0
     if report.errors:
         print(f"[suspect] {len(report.errors)} firm-rule violation(s):")
@@ -521,12 +521,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_stmt.set_defaults(func=statements_cmd)
 
-    p_krist = sub.add_parser(
-        "kristina", help="Kristina editorial checklist: banned phrasing, em-dashes, spelling"
+    p_edit = sub.add_parser(
+        "editorial", help="Editorial checklist: banned phrasing, em-dashes, spelling"
     )
-    p_krist.add_argument("manuscript", help="manuscript: .docx or plain text")
-    p_krist.add_argument("--journal", help="target journal key; sets the spelling variant")
-    p_krist.set_defaults(func=kristina_cmd)
+    p_edit.add_argument("manuscript", help="manuscript: .docx or plain text")
+    p_edit.add_argument("--journal", help="target journal key; sets the spelling variant")
+    p_edit.set_defaults(func=editorial_cmd)
 
     p_units = sub.add_parser(
         "units", help="temperature and composition unit consistency"

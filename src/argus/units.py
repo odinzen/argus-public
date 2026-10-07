@@ -1,6 +1,6 @@
 """Temperature and composition unit consistency across a manuscript.
 
-Kristina's rule is one primary temperature unit and one composition unit per paper, and
+The editorial rule is one primary temperature unit and one composition unit per paper, and
 the target journal decides which. This does not know a journal's house unit unless one is
 given, so like `argus format` it works two ways: with a `--journal` it holds the paper to
 that journal's pinned unit and fails on the other one; without one it only reports a mix,
@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 
 from . import audit, policy
 
-# degC in either spelling (`°C` or Kristina's `degC`/`deg C`); both are the same unit.
+# degC in either spelling (`°C` or the plain-text `degC`/`deg C`); both are the same unit.
 _DEGC = re.compile(r"°\s*C|(?<![A-Za-z])deg\.?\s*C\b", re.IGNORECASE)
 # An absolute temperature in kelvin: a number then K, not `Kg`, `K2O`, or a bare variable.
 _KELVIN = re.compile(r"(?<![A-Za-z0-9])\d+(?:\.\d+)?\s*K(?![A-Za-z])")

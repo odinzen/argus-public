@@ -1,6 +1,6 @@
 """Odinzen manuscript policy: what every outgoing manuscript must and must not carry.
 
-One source of truth for the `statements` and `kristina` checks. It is plain
+One source of truth for the `statements` and `editorial` checks. It is plain
 Python data, not YAML, because argus ships with no third-party dependencies and adding a
 loader for one config file is not worth it. Edit the data here; the checks read it.
 

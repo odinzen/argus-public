@@ -5,7 +5,7 @@
 #       rev: <commit-sha>
 #       hooks:
 #         - id: argus-repro          # only in a reproducibility repo
-#         - id: argus-kristina
+#         - id: argus-editorial
 #           files: ^manuscript\.md$  # point each manuscript hook at your one draft
 #
 # The repo-level hook (repro) scans the whole tree on every commit. The
@@ -26,9 +26,9 @@
   language: python
   files: \.(md|docx)$
 
-- id: argus-kristina
-  name: argus kristina (editorial checklist)
-  entry: argus kristina
+- id: argus-editorial
+  name: argus editorial (editorial checklist)
+  entry: argus editorial
   language: python
   files: \.(md|docx)$
 

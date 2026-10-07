@@ -1,7 +1,8 @@
-"""The machine-checkable slice of Kristina's standing editorial checklist.
+"""The machine-checkable slice of a standing editorial checklist.
 
-Her 55 comments on the GaInSn paper are the source. Most are judgment (split a 40-word
-sentence, cut an illustrative figure, expand the CALPHAD sections) and stay a human pass.
+The checklist comes from editorial review of past manuscripts. Most of it is judgment (split
+a 40-word sentence, cut an illustrative figure, expand the CALPHAD sections) and stays a
+human pass.
 The rest are literal string rules that drift back into every draft, and those are here: the
 banned phrasings and their replacements, the em-dash and colon habit, "et al." kept intact,
 American spelling, no "in preparation" citations, and no degC/K mixed in one sentence.
@@ -51,7 +52,7 @@ _PHRASES: list[tuple[str, str]] = [
 _COMPUTE = re.compile(r"\bcomput(e|es|ed|ing|ation|ational)\b", re.IGNORECASE)
 
 # Spelling: (American, British) pairs. The target variant decides which side is flagged;
-# with no journal given, Kristina's default is American, so British forms are flagged.
+# with no journal given, the default is American, so British forms are flagged.
 _SPELLING: list[tuple[str, str]] = [
     ("optimization", "optimisation"),
     ("optimize", "optimise"),
@@ -212,7 +213,7 @@ def _line_index(text: str):
 
 
 @dataclass
-class KristinaReport:
+class EditorialReport:
     issues: list[KIssue] = field(default_factory=list)
     variant: str = "American"
 
@@ -230,14 +231,14 @@ class KristinaReport:
 
 
 def _body(text: str) -> str:
-    """Everything before the reference list; Kristina's prose rules are body-only."""
+    """Everything before the reference list; the prose rules are body-only."""
     section = audit.references_section(text)
     if section and section in text and section != text:
         return text[: text.find(section)]
     return text
 
 
-def check_kristina(text: str, journal_variant: str | None = None) -> KristinaReport:
+def check_editorial(text: str, journal_variant: str | None = None) -> EditorialReport:
     variant = journal_variant or "American"
     body = _body(text)
     lines = body.splitlines()
@@ -246,4 +247,4 @@ def check_kristina(text: str, journal_variant: str | None = None) -> KristinaRep
     issues += _rule_issues(lines)
     issues += _long_sentences(body)
     issues.sort(key=lambda x: (x.line, x.severity != "error"))
-    return KristinaReport(issues=issues, variant=variant)
+    return EditorialReport(issues=issues, variant=variant)

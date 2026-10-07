@@ -13,7 +13,7 @@ def test_catches_coauthor_conflation():
     )
     record = CrossrefRecord(
         "Nanophase transition metal oxides",
-        ["Navrotsky", "Ma", "Lilova", "Birkner"],
+        ["Navrotsky", "Ma", "Doe", "Birkner"],
         2010,
     )
     finding = verify(ref, record)
@@ -25,13 +25,13 @@ def test_correct_reference_passes():
     ref = Reference(
         "ok",
         "Nanophase transition metal oxides",
-        ["A. Navrotsky", "C. Ma", "K. Lilova", "B. Birkner"],
+        ["A. Navrotsky", "C. Ma", "J. Doe", "B. Birkner"],
         2010,
         "10.0/x",
     )
     record = CrossrefRecord(
         "Nanophase transition metal oxides",
-        ["Navrotsky", "Ma", "Lilova", "Birkner"],
+        ["Navrotsky", "Ma", "Doe", "Birkner"],
         2010,
     )
     assert verify(ref, record).status == "ok"
@@ -144,6 +144,6 @@ def test_et_al_does_not_excuse_a_wrong_author():
     # Planted known-bad: truncation must never wave through a borrowed/wrong name.
     issues = author_list_diff(
         ["Navrotsky", "Mazeina", "et al."],
-        ["Navrotsky", "Ma", "Lilova", "Birkner"],
+        ["Navrotsky", "Ma", "Doe", "Birkner"],
     )
     assert any("mazeina" in i.lower() for i in issues)

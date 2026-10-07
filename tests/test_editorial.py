@@ -1,6 +1,6 @@
 import zipfile
 
-from argus import cli, kristina
+from argus import cli, editorial
 
 
 def _kinds(report):
@@ -8,29 +8,29 @@ def _kinds(report):
 
 
 def test_em_dash_is_an_error():
-    r = kristina.check_kristina("The result — a good one — held.\n")
+    r = editorial.check_editorial("The result — a good one — held.\n")
     assert r.status == "suspect"
     assert "em-dash" in _kinds(r)
 
 
 def test_pandoc_double_hyphen_dash_flagged():
-    r = kristina.check_kristina("The value was high -- higher than expected.\n")
+    r = editorial.check_editorial("The value was high -- higher than expected.\n")
     assert "em-dash" in _kinds(r)
 
 
 def test_citation_range_en_dash_not_flagged():
     # Elsevier numeric styles collapse consecutive citations with an en dash.
-    r = kristina.check_kristina("Competing phases [13–15], at a cost [2, 5–7].\n")
+    r = editorial.check_editorial("Competing phases [13–15], at a cost [2, 5–7].\n")
     assert "em-dash" not in _kinds(r)
 
 
 def test_prose_dash_beside_citation_range_still_flagged():
-    r = kristina.check_kristina("Phases [13–15] – the stable ones – held.\n")
+    r = editorial.check_editorial("Phases [13–15] – the stable ones – held.\n")
     assert sum(x.kind == "em-dash" for x in r.issues) == 2
 
 
 def test_em_dash_inside_brackets_still_flagged():
-    r = kristina.check_kristina("Competing phases [13—15] held.\n")
+    r = editorial.check_editorial("Competing phases [13—15] held.\n")
     assert "em-dash" in _kinds(r)
 
 
@@ -46,23 +46,23 @@ def test_superscript_citation_range_in_docx_not_flagged(tmp_path, capsys):
     path = tmp_path / "paper.docx"
     with zipfile.ZipFile(path, "w") as zf:
         zf.writestr("word/document.xml", doc)
-    assert cli.main(["kristina", str(path)]) == 0
+    assert cli.main(["editorial", str(path)]) == 0
     assert "em-dash" not in capsys.readouterr().out
 
 
 def test_et_al_expansion_is_an_error():
-    r = kristina.check_kristina("Following Murugan and co-workers, we adopt the value.\n")
+    r = editorial.check_editorial("Following Murugan and co-workers, we adopt the value.\n")
     assert r.status == "suspect"
     assert "et-al-expanded" in _kinds(r)
 
 
 def test_in_preparation_citation_is_an_error():
-    r = kristina.check_kristina("A companion study (in preparation) extends this.\n")
+    r = editorial.check_editorial("A companion study (in preparation) extends this.\n")
     assert "in-preparation" in _kinds(r)
 
 
 def test_banned_phrase_is_a_warning():
-    r = kristina.check_kristina("The fit is very consistent with the data.\n")
+    r = editorial.check_editorial("The fit is very consistent with the data.\n")
     assert r.status == "ok"  # warnings do not gate
     assert "banned-phrase" in _kinds(r)
     hit = next(x for x in r.issues if x.kind == "banned-phrase")
@@ -70,7 +70,7 @@ def test_banned_phrase_is_a_warning():
 
 
 def test_british_spelling_flagged_by_default():
-    r = kristina.check_kristina("We ran the optimisation and digitising steps.\n")
+    r = editorial.check_editorial("We ran the optimisation and digitising steps.\n")
     kinds = _kinds(r)
     assert any(k.startswith("spelling") for k in kinds)
     hit = next(x for x in r.issues if x.kind.startswith("spelling"))
@@ -78,25 +78,25 @@ def test_british_spelling_flagged_by_default():
 
 
 def test_american_spelling_flagged_for_british_journal():
-    r = kristina.check_kristina("We ran the optimization step.\n", journal_variant="British")
+    r = editorial.check_editorial("We ran the optimization step.\n", journal_variant="British")
     hit = next((x for x in r.issues if x.kind.startswith("spelling")), None)
     assert hit is not None
     assert hit.suggestion.startswith("optimisation")
 
 
 def test_sentence_initial_but():
-    r = kristina.check_kristina("The value is low. But it agrees with theory.\n")
+    r = editorial.check_editorial("The value is low. But it agrees with theory.\n")
     assert "sentence-initial" in _kinds(r)
 
 
 def test_unit_mixing_in_one_line():
-    r = kristina.check_kristina("The eutectic is 232 degC, i.e. 505 K, in this system.\n")
+    r = editorial.check_editorial("The eutectic is 232 degC, i.e. 505 K, in this system.\n")
     assert "unit-mix" in _kinds(r)
 
 
 def test_long_sentence_flagged():
     long = "word " * 45 + "end.\n"
-    r = kristina.check_kristina(long)
+    r = editorial.check_editorial(long)
     assert "long-sentence" in _kinds(r)
 
 
@@ -106,13 +106,13 @@ def test_references_section_excluded():
         "## References\n"
         "1. Author, A. Optimisation of things. Journal, 2020.\n"
     )
-    r = kristina.check_kristina(text)
+    r = editorial.check_editorial(text)
     # The British spelling sits in the reference list, which is Zotero-managed and excluded.
     assert not any(k.startswith("spelling") for k in _kinds(r))
 
 
 def test_clean_prose_passes():
     text = "The present work calculates the enthalpy. It is in good agreement with theory.\n"
-    r = kristina.check_kristina(text)
+    r = editorial.check_editorial(text)
     assert r.status == "ok"
     assert r.issues == []
