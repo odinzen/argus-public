@@ -222,8 +222,6 @@ argus units manuscript.docx --journal JECS
 - **Composition** is always advisory: at% and mol% are the same quantity, so using both is
   flagged, and wt% alongside either is a conversion the reader must be told is intentional.
 
-## Consistency
-
 ## Repro repo
 
 `argus repro` checks that a public reproducibility repo's README still matches its files.
