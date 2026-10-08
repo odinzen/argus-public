@@ -30,6 +30,36 @@ argus examples/demo_refs.json
 It checks five real papers (all pass) plus three planted distortions, each reported
 with the field at fault.
 
+To install without cloning the repository:
+
+```
+pip install "git+https://github.com/odinzen/argus-public.git"
+```
+
+## Using Argus with an AI assistant (ChatGPT, Gemini, Claude)
+
+Argus runs Python and must reach Crossref over the internet, so how you use it with an AI
+assistant depends on whether the assistant can run commands with internet access.
+
+**Assistants that run commands on your computer or in a connected workspace** (Claude Code,
+OpenAI Codex, Gemini CLI, Cursor, and similar) can install and run Argus themselves. Paste:
+
+> Install Argus with `pip install "git+https://github.com/odinzen/argus-public.git"`, read its
+> AGENTS.md, then run `argus check refs.json` on my reference file and `argus order` on my
+> manuscript. Report every reference that is not `ok`, with the field Argus flags and the
+> registry value. Do not correct any reference from memory.
+
+`AGENTS.md` in this repository tells the assistant how to run Argus and read its output.
+
+**Chat websites** (chatgpt.com, gemini.google.com, claude.ai) usually run code in a sandbox
+without internet access, so they cannot reach Crossref and cannot run the check. Run Argus
+yourself, paste its report into the chat, and ask the assistant to help fix each flagged entry
+using the registry values Argus prints. If your chat tool can reach the internet, the
+instructions above apply.
+
+Whichever you use, the registry record is the authority. An assistant that fills in a missing
+author list or page range from memory reintroduces exactly the error Argus is built to catch.
+
 ## What it checks
 
 | Field       | Comparison                                                                 |
