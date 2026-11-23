@@ -16,13 +16,15 @@ in a sandbox without internet access it cannot verify anything, so say so instea
 
 | Task | Command |
 |---|---|
-| Verify each reference against its registry record | `argus check refs.json --mailto you@example.org` (CSL-JSON or BibTeX) |
+| Verify each reference against its registry record | `argus check refs.json --mailto you@example.org` (CSL-JSON, BibTeX or CSV) |
 | Check in-text numbering against the reference list, plus figure, table and section references | `argus order manuscript.docx` (or a plain-text or Markdown file) |
 | Per-citation audit of a Word file written with the Zotero plugin | `argus audit manuscript.docx` |
 | Renumber citations into first-appearance order | `argus renumber draft.md` (report only; `--apply` rewrites the file) |
 
 A reference manager exports CSL-JSON: in Zotero, select the items, right-click, Export Items,
-CSL JSON. Try `argus check examples/demo_refs.json` to see every status.
+CSL JSON. A CSV needs a header row with DOI, Title and Authors columns (authors separated by
+semicolons); results are listed by spreadsheet row, and exit code 2 means the file was refused,
+with the reason. Report any `note:` line, since it names what was not checked. Try `argus check examples/demo_refs.json` to see every status.
 
 ## Reading the result
 

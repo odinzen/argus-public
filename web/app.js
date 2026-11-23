@@ -2,7 +2,7 @@
 // runs in the browser via Pyodide, so there is one implementation, not two.
 //
 // Two modes:
-//   structured  - BibTeX or CSL-JSON, exact author-list check (check()).
+//   structured  - BibTeX, CSL-JSON or a CSV/TSV table, exact author-list check (check()).
 //   audit       - PDF/Word manuscript; text is extracted in the browser, the
 //                 reference list isolated, each entry matched to Crossref (audit()).
 // Input can be pasted, or one/many files, or a whole folder (selected or dragged).
@@ -22,9 +22,17 @@ function setStatus(msg, busy) {
   statusEl.innerHTML = (busy ? '<span class="spinner"></span>' : "") + (msg ? esc(msg) : "");
 }
 
-const SUPPORTED = [".bib", ".json", ".txt", ".pdf", ".docx"];
+const SUPPORTED = [".bib", ".json", ".csv", ".tsv", ".txt", ".pdf", ".docx"];
 
-// BibTeX (@) and CSL-JSON ({...} or a JSON array) get the exact check; anything else
+// A pasted table: some cell of the first line is exactly DOI and another exactly Title.
+function looksLikeTable(text) {
+  const header = text.trimStart().split(/\r?\n/, 1)[0].split(/[,;\t]/)
+    .map((c) => c.replace(/"/g, "").trim().toLowerCase());
+  return (header.includes("doi") && header.some((c) => /^(article |document )?title$/.test(c)))
+    || (header.includes("di") && header.includes("ti"));
+}
+
+// BibTeX (@), CSL-JSON ({...} or a JSON array) and tables get the exact check; anything else
 // (a plain or numbered reference list) gets the best-effort audit. A leading "[1]" is
 // a citation number, not a JSON array, so look at what follows the bracket.
 function detectMode(text) {
@@ -34,33 +42,50 @@ function detectMode(text) {
     const next = t.slice(1).trimStart()[0];
     if (next === "{" || next === '"' || next === "]") return "structured";
   }
-  return "audit";
+  return looksLikeTable(t) ? "structured" : "audit";
+}
+
+function isTableFile(name) {
+  return /\.(csv|tsv)$/i.test(name);
 }
 
 function modeForFile(name, text) {
   const n = name.toLowerCase();
   if (n.endsWith(".pdf") || n.endsWith(".docx")) return "audit";
-  if (n.endsWith(".bib") || n.endsWith(".json")) return "structured";
+  if (n.endsWith(".bib") || n.endsWith(".json") || isTableFile(n)) return "structured";
   return detectMode(text); // .txt or anything else: decide by content
 }
 
 const GLUE = `
+import asyncio
 import json
 import re as _re
 from pathlib import Path
 from urllib.parse import quote
 from pyodide.http import pyfetch
 from argus.references import load_references
+from argus.tables import parse_table
 from argus.verify import CrossrefRecord, verify, first_page_of
 from argus.audit import references_section, split_entries, verdict
 
 _DOI_RE = _re.compile(r"\b(10\.\d{4,9}/\S+)", _re.IGNORECASE)
 
 async def _get(url):
-    resp = await pyfetch(url, headers={"Accept": "application/json"})
-    if resp.status != 200:
-        return None
-    return await resp.json()
+    # Crossref drops rapid requests, which the browser reports only as a failed fetch. A
+    # long list would show those as broken DOIs, so retry; a 404 is a real answer.
+    for pause in (1, 3, 6, None):
+        try:
+            resp = await pyfetch(url, headers={"Accept": "application/json"})
+            if resp.status == 200:
+                return await resp.json()
+            if resp.status == 404:
+                return None
+        except OSError:
+            if pause is None:
+                raise
+        if pause is not None:
+            await asyncio.sleep(pause)
+    return None
 
 async def _record(doi, mailto):
     url = "https://api.crossref.org/works/" + quote(doi)
@@ -86,11 +111,16 @@ async def _record(doi, mailto):
         first_page=first_page_of(msg.get("page")) or None,
     )
 
-async def check(text, mailto):
-    name = "/in.bib" if text.lstrip().startswith("@") else "/in.json"
-    Path(name).write_text(text, encoding="utf-8")
+async def check(text, mailto, table):
+    notes = []
     try:
-        refs = load_references(name)
+        if table:
+            parsed = parse_table(text)
+            refs, notes = parsed.refs, parsed.notes
+        else:
+            name = "/in.bib" if text.lstrip().startswith("@") else "/in.json"
+            Path(name).write_text(text, encoding="utf-8")
+            refs = load_references(name)
     except Exception as e:
         return json.dumps({"error": "Could not parse input: " + str(e)})
     out = []
@@ -105,7 +135,7 @@ async def check(text, mailto):
             continue
         f = verify(r, rec)
         out.append({"key": r.key, "status": f.status, "issues": list(f.issues)})
-    return json.dumps({"results": out})
+    return json.dumps({"results": out, "notes": notes})
 
 async def audit(text, mailto):
     entries = split_entries(references_section(text))
@@ -150,15 +180,11 @@ async def audit(text, mailto):
 `;
 
 async function loadCore(pyodide) {
-  // Production: the published package. Local dev: modules served beside this page.
-  try {
-    await pyodide.loadPackage("micropip");
-    const micropip = pyodide.pyimport("micropip");
-    await micropip.install("argus-citations");
-    return;
-  } catch (e) { /* not on PyPI yet, or offline */ }
+  // scripts/sync_web.py copies the modules beside this page and lists them in modules.json.
+  const list = await fetch("argus/modules.json");
+  if (!list.ok) throw new Error("core modules not found; run scripts/sync_web.py first");
   pyodide.FS.mkdirTree("/argus");
-  for (const f of ["__init__.py", "verify.py", "references.py", "audit.py"]) {
+  for (const f of await list.json()) {
     const resp = await fetch("argus/" + f);
     if (!resp.ok) throw new Error("could not load core module argus/" + f);
     pyodide.FS.writeFile("/argus/" + f, await resp.text());
@@ -200,15 +226,30 @@ async function readText(file) {
   const n = file.name.toLowerCase();
   if (n.endsWith(".pdf")) return extractPdf(file);
   if (n.endsWith(".docx")) return extractDocx(file);
+  if (isTableFile(n)) return decodeTable(await file.arrayBuffer());
   return file.text();
 }
 
+// Excel on Windows saves plain "CSV" in windows-1252, so UTF-8 cannot be assumed.
+function decodeTable(buffer) {
+  const [a, b] = new Uint8Array(buffer);
+  if (a === 0xff && b === 0xfe) return new TextDecoder("utf-16le").decode(buffer);
+  if (a === 0xfe && b === 0xff) return new TextDecoder("utf-16be").decode(buffer);
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+  } catch (e) {
+    return new TextDecoder("windows-1252").decode(buffer);
+  }
+}
+
 let pyodide;
-async function runPython(mode, text) {
+async function runPython(mode, text, table) {
+  if (mode === "audit") table = false;
+  pyodide.globals.set("UI_TABLE", Boolean(table));
   pyodide.globals.set("UI_TEXT", text);
   pyodide.globals.set("UI_MAILTO", mailtoEl.value.trim());
-  const fn = mode === "audit" ? "audit" : "check";
-  return JSON.parse(await pyodide.runPythonAsync(`await ${fn}(UI_TEXT, UI_MAILTO)`));
+  const call = mode === "audit" ? "audit(UI_TEXT, UI_MAILTO)" : "check(UI_TEXT, UI_MAILTO, UI_TABLE)";
+  return JSON.parse(await pyodide.runPythonAsync(`await ${call}`));
 }
 
 function structuredTable(rows) {
@@ -242,13 +283,14 @@ function sectionHtml(title, mode, data) {
   }
   const rows = data.results || [];
   const need = rows.filter((r) => r.status !== "ok").length;
-  return `<div class="file-block">${head}<p class="sec-sum">${rows.length} checked, ${need} need review.</p>${structuredTable(rows)}</div>`;
+  const notes = (data.notes || []).map((n) => `<p class="sec-sum">Note: ${esc(n)}.</p>`).join("");
+  return `<div class="file-block">${head}<p class="sec-sum">${rows.length} checked, ${need} need review.</p>${notes}${structuredTable(rows)}</div>`;
 }
 
 async function processFiles(list) {
   const files = [...list].filter((f) => SUPPORTED.some((ext) => f.name.toLowerCase().endsWith(ext)));
   if (!files.length) {
-    setStatus("No supported files (.bib, .json, .txt, .pdf, .docx) in that selection.");
+    setStatus("No supported files (.bib, .json, .csv, .tsv, .txt, .pdf, .docx) in that selection.");
     return;
   }
   runBtn.disabled = true;
@@ -262,7 +304,7 @@ async function processFiles(list) {
       try {
         const text = await readText(f);
         mode = modeForFile(f.name, text);
-        html += sectionHtml(f.name, mode, await runPython(mode, text));
+        html += sectionHtml(f.name, mode, await runPython(mode, text, isTableFile(f.name) || looksLikeTable(text)));
       } catch (e) {
         html += sectionHtml(f.name, mode, { error: "Could not process: " + e.message });
       }
@@ -338,7 +380,7 @@ async function main() {
       ? "Matching pasted references against Crossref…"
       : "Checking against Crossref…", true);
     try {
-      resultsEl.innerHTML = sectionHtml(null, mode, await runPython(mode, text));
+      resultsEl.innerHTML = sectionHtml(null, mode, await runPython(mode, text, looksLikeTable(text)));
       setStatus("Done.");
     } catch (e) {
       setStatus("Error: " + e.message);

@@ -172,5 +172,7 @@ def verify(ref: Reference, record: CrossrefRecord, title_threshold: float = 0.9)
         and first_page_of(ref.first_page) != first_page_of(record.first_page)
     ):
         issues.append(f"first page differs: cited {ref.first_page}, record {record.first_page}")
+    if record.authors and not ref.authors:  # nothing to diff must not read as a match
+        issues.append(f"no authors listed; the record has {len(record.authors)}")
     issues += author_list_diff(ref.authors, record.authors, truncated=ref.truncated)
     return Finding(ref.key, "ok" if not issues else "suspect", issues)

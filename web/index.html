@@ -153,21 +153,21 @@
 
   <div class="card" id="card">
     <p class="lead">Paste a reference list (<strong>BibTeX</strong>,
-    <strong>CSL-JSON</strong>, or a plain formatted list copied from a document) and
-    press Check, or load a <strong>PDF</strong> or <strong>Word</strong> manuscript. Your
+    <strong>CSL-JSON</strong>, <strong>CSV</strong>, or a plain formatted list copied from a
+    document) and press Check, or load a <strong>PDF</strong> or <strong>Word</strong> manuscript. Your
     file stays in your browser; only DOIs (or search terms) are sent to Crossref.</p>
 
-    <textarea id="input" placeholder="Paste references here — BibTeX, CSL-JSON, or a formatted list — or choose a file below..."></textarea>
+    <textarea id="input" placeholder="Paste references here — BibTeX, CSL-JSON, CSV, or a formatted list — or choose a file below..."></textarea>
 
     <div class="controls">
-      <label class="filebtn">Choose files<input type="file" id="file" accept=".bib,.json,.txt,.pdf,.docx" multiple hidden></label>
+      <label class="filebtn">Choose files<input type="file" id="file" accept=".bib,.json,.csv,.tsv,.txt,.pdf,.docx" multiple hidden></label>
       <label class="filebtn">Choose folder<input type="file" id="folder" webkitdirectory multiple hidden></label>
       <input type="email" id="mailto" placeholder="email (optional, for Crossref's faster lane)">
       <button id="run" disabled>Loading…</button>
     </div>
 
     <p class="hint">Select multiple files, a whole folder, or drag them onto this box.
-    BibTeX/CSL-JSON give the exact check (full author list, initials, title, year,
+    BibTeX/CSL-JSON/CSV give the exact check (full author list, initials, title, year,
     volume, first page). PDF/Word is a best-effort audit: the reference list is
     extracted as text and each entry matched to Crossref.</p>
     <p class="hint">The email is optional: adding it routes your lookups through

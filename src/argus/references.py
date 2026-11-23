@@ -1,8 +1,9 @@
-"""Load references from CSL-JSON or BibTeX, the formats reference managers export.
+"""Load references from CSL-JSON, BibTeX or a CSV table.
 
 CSL-JSON is Zotero's "Export Items -> CSL JSON"; BibTeX (.bib) is what LaTeX users
-keep. `load_references` picks the parser by extension, falling back to a content sniff.
-Both produce the same `Reference` objects, so the verifier does not care which was used.
+keep; CSV (see `tables`) is what databases and spreadsheets export. `load_references`
+picks the parser by extension, falling back to a content sniff. All of them produce the
+same `Reference` objects, so the verifier does not care which was used.
 """
 
 from __future__ import annotations
@@ -15,12 +16,16 @@ from .verify import Reference, first_page_of
 
 
 def load_references(path: str | Path) -> list[Reference]:
+    from .tables import is_table  # tables builds on the helpers in this module
+
     p = Path(path)
     suffix = p.suffix.lower()
     if suffix == ".bib":
         return load_bibtex(p)
     if suffix == ".json":
         return load_csl_json(p)
+    if is_table(p):
+        return load_csv(p)
     text = p.read_text(encoding="utf-8").lstrip()
     return load_bibtex(p) if text.startswith("@") else load_csl_json(p)
 
@@ -77,6 +82,12 @@ def load_csl_json(path: str | Path) -> list[Reference]:
         raise ValueError("CSL-JSON must be an array of items or a single item object")
     # Skip non-object entries (a stray string or null) rather than crash the whole run.
     return [reference_from_csl(item) for item in data if isinstance(item, dict)]
+
+
+def load_csv(path: str | Path) -> list[Reference]:
+    from .tables import read_table
+
+    return read_table(path).refs
 
 
 def load_bibtex(path: str | Path) -> list[Reference]:

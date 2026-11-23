@@ -18,8 +18,9 @@ argus refs.json --mailto you@example.org
 ```
 
 `refs.json` is a CSL-JSON file (Zotero: select items, right-click, Export Items, CSL
-JSON); Argus also reads BibTeX (`refs.bib`). The `--mailto` is optional and places
-requests in Crossref's polite pool.
+JSON); Argus also reads BibTeX (`refs.bib`) and CSV (`refs.csv`, see
+[CSV tables](#csv-tables)). The `--mailto` is optional and places requests in Crossref's
+polite pool.
 
 Try it on the bundled example:
 
@@ -28,7 +29,7 @@ argus examples/demo_refs.json
 ```
 
 It checks five real papers (all pass) plus three planted distortions, each reported
-with the field at fault.
+with the field at fault. `examples/demo_refs.csv` holds the same eight as a CSV.
 
 To install without cloning the repository:
 
@@ -64,7 +65,7 @@ author list or page range from memory reintroduces exactly the error Argus is bu
 
 | Field       | Comparison                                                                 |
 |-------------|----------------------------------------------------------------------------|
-| Author list | every cited author on the record and (for full lists) none dropped; surname similarity; initials compared when a surname matches |
+| Author list | authors listed, every cited author on the record and (for full lists) none dropped; surname similarity; initials compared when a surname matches |
 | Title       | similarity, tolerant of formatting and subscripts                          |
 | Year        | within one year                                                            |
 | Volume      | equality, when the citation gives it                                       |
@@ -86,6 +87,37 @@ Each reference is reported as one of:
 | `broken`  | the DOI did not resolve                              |
 
 The exit code is non-zero if any reference needs review.
+
+## CSV tables
+
+```
+argus refs.csv
+```
+
+Argus reads a CSV or TSV with a header row: an export from Zotero, Scopus, Web of Science
+or PubMed, or a spreadsheet kept by hand and saved as CSV. Results are listed by
+spreadsheet row. The columns may be in any order, and columns it does not know are ignored.
+
+| Column     | Needed   | Header names recognized                                                    |
+|------------|----------|----------------------------------------------------------------------------|
+| DOI        | yes      | DOI, DOI URL, DOI Link, DI (a doi.org link is accepted)                     |
+| Title      | yes      | Title, Article Title, Document Title, TI                                   |
+| Authors    | yes      | Authors, Author, Author Full Names, AU, AF; or First Author                |
+| Year       | no       | Year, Publication Year, Date, PY                                           |
+| Volume     | no       | Volume, Vol, VL                                                            |
+| First page | no       | First Page, Start Page, Page Start, Pages, BP                              |
+| Key        | no       | Citation Key, Cite Key, ID, Key (used only to label the row)               |
+
+Separate authors with semicolons (`Roe, Jane; Smith, John`). Other common styles are read
+too, but with commas alone `Family, Given` and `Author, Author` can look the same. A cell such
+as `Day, Terence` is read as one person unless other rows list authors by comma; two full names
+are read as two people, so a correct entry may be flagged.
+
+A file that cannot be read safely is refused with the reason and exit code 2: a missing
+DOI, Title or Authors column, a stray quote, or a row with more fields than the header. When
+a file has no year, volume or page column, or gives only first authors or "et al.", the
+report says what was not checked. Delimiter (comma, semicolon, tab) and encoding (UTF-8,
+UTF-16, Windows) are detected.
 
 ## Numbering
 

@@ -1,6 +1,7 @@
 """argus command line.
 
   argus check refs.json         verify each reference against the registries
+                                (CSL-JSON, BibTeX, or a CSV/TSV table)
   argus order manuscript.docx   check numbering: citations, plus figure/table captions
   argus typography draft.md     find unclosed superscripts and flat subscripts (source)
   argus typography draft.docx   confirm a rebuilt docx carries the styled runs
@@ -46,6 +47,7 @@ from . import (
 )
 from .references import load_references
 from .resolver import default_resolvers, resolve_doi
+from .tables import is_table, read_table
 from .verify import verify
 
 _SUBCOMMANDS = {
@@ -75,7 +77,16 @@ def _read_plain(path: str) -> str:
 
 def check(args: argparse.Namespace) -> int:
     resolvers = default_resolvers()
-    refs = load_references(args.refs)
+    notes: list[str] = []
+    try:
+        if is_table(args.refs):
+            table = read_table(args.refs)
+            refs, notes = table.refs, table.notes
+        else:
+            refs = load_references(args.refs)
+    except ValueError as error:
+        print(f"could not read {args.refs}: {error}", file=sys.stderr)
+        return 2
     problems = 0
     for ref in refs:
         if not ref.doi:
@@ -97,6 +108,8 @@ def check(args: argparse.Namespace) -> int:
             for issue in finding.issues:
                 print(f"            - {issue}")
     print(f"\n{len(refs)} checked, {problems} need review.")
+    for note in notes:
+        print(f"note: {note}")
     return 1 if problems else 0
 
 
@@ -471,7 +484,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_check = sub.add_parser("check", help="verify references against the registries")
-    p_check.add_argument("refs", help="references file: CSL-JSON (.json) or BibTeX (.bib)")
+    p_check.add_argument("refs", help="references: CSL-JSON, BibTeX, or a CSV/TSV table")
     p_check.add_argument("--mailto", help="contact email for the registries' polite pools")
     p_check.set_defaults(func=check)
 
@@ -548,6 +561,9 @@ def main(argv: list[str] | None = None) -> int:
     p_repro.set_defaults(func=repro_cmd)
 
     args = parser.parse_args(argv)
+    # A piped Windows console is cp1252; a Greek letter in a title must not end the run.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
     return args.func(args)
 
 
